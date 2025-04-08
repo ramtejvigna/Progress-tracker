@@ -1,0 +1,82 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id          String            @id @default(cuid())
+    name        String
+    email       String            @unique
+    password    String
+    role        String            @default("student")
+    status      String            @default("active")
+    createdAt   DateTime          @default(now())
+    updatedAt   DateTime          @updatedAt
+    classes     ClassEnrollment[]
+    activities  Activity[]
+    attendances Attendance[]
+}
+
+model Class {
+    id           String            @id @default(cuid())
+    title        String
+    description  String?
+    schedule     String
+    time         String
+    location     String
+    status       String            @default("active")
+    createdAt    DateTime          @default(now())
+    updatedAt    DateTime          @updatedAt
+    instructorId String
+    enrollments  ClassEnrollment[]
+    activities   Activity[]
+    attendances  Attendance[]
+}
+
+model ClassEnrollment {
+    id         String   @id @default(cuid())
+    userId     String
+    classId    String
+    enrolledAt DateTime @default(now())
+    status     String   @default("active")
+    user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    class      Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, classId])
+}
+
+model Activity {
+    id          String   @id @default(cuid())
+    title       String
+    description String?
+    type        String
+    duration    Float
+    status      String   @default("in_progress")
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    userId      String
+    classId     String?
+    user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    class       Class?   @relation(fields: [classId], references: [id], onDelete: SetNull)
+}
+
+model Attendance {
+    id           String    @id @default(cuid())
+    date         DateTime
+    status       String    @default("present")
+    checkInTime  DateTime?
+    checkOutTime DateTime?
+    notes        String?
+    createdAt    DateTime  @default(now())
+    updatedAt    DateTime  @updatedAt
+    userId       String
+    classId      String
+    user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    class        Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, classId, date])
+}
