@@ -1,0 +1,89 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(cuid())
+  email          String          @unique
+  name           String
+  password       String
+  role           Role            @default(STUDENT)
+  isVerified     Boolean         @default(false)
+  verificationOtp String?
+  otpExpiry      DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  points         Int             @default(0)
+  currentStreak  Int             @default(0)
+  longestStreak  Int             @default(0)
+  attendances    Attendance[]
+  userBadges     UserBadge[]
+}
+
+model LabSession {
+  id          String       @id @default(cuid())
+  date        DateTime
+  startTime   DateTime
+  endTime     DateTime
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  attendances Attendance[]
+}
+
+model Attendance {
+  id           String     @id @default(cuid())
+  userId       String
+  labSessionId String
+  checkInTime  DateTime
+  checkOutTime DateTime?
+  duration     Int?       // Duration in minutes
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  labSession   LabSession @relation(fields: [labSessionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, labSessionId])
+}
+
+model Holiday {
+  id          String   @id @default(cuid())
+  date        DateTime @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Badge {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  description String
+  imageUrl    String
+  pointsRequired Int
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  userBadges  UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeId   String
+  earnedAt  DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+}
+
+enum Role {
+  ADMIN
+  STUDENT
+}
